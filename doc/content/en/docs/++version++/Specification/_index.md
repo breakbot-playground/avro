@@ -75,6 +75,8 @@ Records use the type name "record" and support the following attributes:
   * _name_: a JSON string providing the name of the field (required), and
   * _doc_: a JSON string describing this field for users (optional).
   * _type_: a [schema]({{< ref "#schema-declaration" >}} "Schema declaration"), as defined above
+  * _order_: specifies how this field impacts sort ordering of this record (optional). Valid values are "ascending" (the default), "descending", or "ignore". For more details on how this is used, see the sort order section below.
+  * _aliases_: a JSON array of strings, providing alternate names for this field (optional).
   * _default_: A default value for this field, only used when reading instances that lack the field for schema evolution purposes. The presence of a default value does not make the field optional at encoding time. Permitted values depend on the field's schema type, according to the table below. Default values for union fields correspond to the first schema in the union. Default values for bytes and fixed fields are JSON strings, where Unicode code points 0-255 are mapped to unsigned 8-bit byte values 0-255. Avro encodes a field even if its value is equal to its default.
 
 *field default values*
@@ -92,9 +94,6 @@ Records use the type name "record" and support the following attributes:
 | array         | array          | `[1]`       |
 | map           | object         | `{"a": 1}`  |
 | fixed         | string         | `"\u00ff"`  |
-
-  * _order_: specifies how this field impacts sort ordering of this record (optional). Valid values are "ascending" (the default), "descending", or "ignore". For more details on how this is used, see the sort order section below.
-  * _aliases_: a JSON array of strings, providing alternate names for this field (optional).
 
 For example, a linked-list of 64-bit values may be defined with:
 ```jsonc
@@ -460,7 +459,7 @@ A file header is thus described by the following schema:
  "fields" : [
    {"name": "magic", "type": {"type": "fixed", "name": "Magic", "size": 4}},
    {"name": "meta", "type": {"type": "map", "values": "bytes"}},
-   {"name": "sync", "type": {"type": "fixed", "name": "Sync", "size": 16}},
+   {"name": "sync", "type": {"type": "fixed", "name": "Sync", "size": 16}}
   ]
 }
 ```
@@ -472,7 +471,18 @@ A file data block consists of:
 * The serialized objects. If a codec is specified, this is compressed by that codec.
 * The file's 16-byte sync marker.
 
-Thus, each block's binary data can be efficiently extracted or skipped without deserializing the contents. The combination of block size, object counts, and sync markers enable detection of corrupt blocks and help ensure data integrity.
+A file data block is thus described by the following schema:
+```json
+{"type": "record", "name": "org.apache.avro.file.DataBlock",
+ "fields" : [
+   {"name": "count", "type": "long"},
+   {"name": "data", "type": "bytes"},
+   {"name": "sync", "type": {"type": "fixed", "name": "Sync", "size": 16}}
+  ]
+}
+```
+
+Each block's binary data can be efficiently extracted or skipped without deserializing the contents. The combination of block size, object counts, and sync markers enable detection of corrupt blocks and help ensure data integrity.
 
 ### Required Codecs
 
@@ -802,7 +812,7 @@ The following schema represents a date:
 }
 ```
 
-### Time (millisecond precision)
+### Time (millisecond precision) {#time_ms}
 The `time-millis` logical type represents a time of day, with no reference to a particular calendar, time zone or date, with a precision of one millisecond.
 
 A `time-millis` logical type annotates an Avro `int`, where the int stores the number of milliseconds after midnight, 00:00:00.000.
@@ -812,7 +822,7 @@ The `time-micros` logical type represents a time of day, with no reference to a 
 
 A `time-micros` logical type annotates an Avro `long`, where the long stores the number of microseconds after midnight, 00:00:00.000000.
 
-### Timestamp (millisecond precision)
+### Timestamp (millisecond precision) {#timestamp_ms}
 The `timestamp-millis` logical type represents an instant on the global timeline, independent of a particular time zone or calendar, with a precision of one millisecond. Please note that time zone information gets lost in this process. Upon reading a value back, we can only reconstruct the instant, but not the original representation. In practice, such timestamps are typically displayed to users in their local time zones, therefore they may be displayed differently depending on the execution environment.
 
 A `timestamp-millis` logical type annotates an Avro `long`, where the long stores the number of milliseconds from the unix epoch, 1 January 1970 00:00:00.000 UTC.
@@ -822,7 +832,7 @@ The `timestamp-micros` logical type represents an instant on the global timeline
 
 A `timestamp-micros` logical type annotates an Avro `long`, where the long stores the number of microseconds from the unix epoch, 1 January 1970 00:00:00.000000 UTC.
 
-### Local timestamp (millisecond precision)
+### Local timestamp (millisecond precision) {#local_timestamp_ms}
 The `local-timestamp-millis` logical type represents a timestamp in a local timezone, regardless of what specific time zone is considered local, with a precision of one millisecond.
 
 A `local-timestamp-millis` logical type annotates an Avro `long`, where the long stores the number of milliseconds, from 1 January 1970 00:00:00.000.

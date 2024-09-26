@@ -18,15 +18,11 @@
 
 package org.apache.avro.mojo;
 
-import org.apache.avro.generic.GenericData.StringType;
-
 import java.io.File;
 import java.io.IOException;
-import java.net.URLClassLoader;
 
 import org.apache.avro.Schema;
-import org.apache.avro.compiler.specific.SpecificCompiler;
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
+import org.apache.avro.SchemaParser;
 
 /**
  * Generate Java classes from Avro schema files (.avsc)
@@ -41,7 +37,7 @@ public class SchemaMojo extends AbstractAvroMojo {
    * A parser used to parse all schema files. Using a common parser will
    * facilitate the import of external schemas.
    */
-  private Schema.Parser schemaParser = new Schema.Parser();
+  private SchemaParser schemaParser = new SchemaParser();
 
   /**
    * A set of Ant-like inclusion patterns used to select files from the source
@@ -71,31 +67,12 @@ public class SchemaMojo extends AbstractAvroMojo {
     // allow them to share a single schema so reuse and sharing of schema
     // is possible.
     if (imports == null) {
-      schema = new Schema.Parser().parse(src);
+      schema = new SchemaParser().parse(src);
     } else {
       schema = schemaParser.parse(src);
     }
 
-    final SpecificCompiler compiler = new SpecificCompiler(schema);
-    compiler.setTemplateDir(templateDirectory);
-    compiler.setStringType(StringType.valueOf(stringType));
-    compiler.setFieldVisibility(getFieldVisibility());
-    compiler.setCreateOptionalGetters(createOptionalGetters);
-    compiler.setGettersReturnOptional(gettersReturnOptional);
-    compiler.setOptionalGettersForNullableFieldsOnly(optionalGettersForNullableFieldsOnly);
-    compiler.setCreateSetters(createSetters);
-    compiler.setEnableDecimalLogicalType(enableDecimalLogicalType);
-    try {
-      final URLClassLoader classLoader = createClassLoader();
-      for (String customConversion : customConversions) {
-        compiler.addCustomConversion(classLoader.loadClass(customConversion));
-      }
-    } catch (ClassNotFoundException | DependencyResolutionRequiredException e) {
-      throw new IOException(e);
-    }
-    compiler.setOutputCharacterEncoding(project.getProperties().getProperty("project.build.sourceEncoding"));
-    compiler.setAdditionalVelocityTools(instantiateAdditionalVelocityTools());
-    compiler.compileToDestination(src, outputDirectory);
+    doCompile(src, schema, outputDirectory);
   }
 
   @Override

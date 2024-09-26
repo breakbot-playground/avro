@@ -24,21 +24,22 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 
-import org.apache.avro.Schema;
+import org.apache.avro.SchemaParser;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileStream;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.util.RandomData;
 import org.apache.trevni.TestUtil;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestCreateRandomFileTool {
   private static final String COUNT = System.getProperty("test.count", "200");
@@ -46,20 +47,20 @@ public class TestCreateRandomFileTool {
   private static final File OUT_FILE = new File(DIR, "random.avro");
   private static final File SCHEMA_FILE = new File("../../../share/test/schemas/weather.avsc");
 
-  private final Schema.Parser schemaParser = new Schema.Parser();
+  private final SchemaParser schemaParser = new SchemaParser();
 
   private static final long SEED = System.currentTimeMillis();
 
   private ByteArrayOutputStream out;
   private ByteArrayOutputStream err;
 
-  @Before
+  @BeforeEach
   public void before() {
     out = new ByteArrayOutputStream();
     err = new ByteArrayOutputStream();
   }
 
-  @After
+  @AfterEach
   public void after() throws Exception {
     out.close();
     err.close();
@@ -106,22 +107,22 @@ public class TestCreateRandomFileTool {
   }
 
   @Test
-  public void testSimple() throws Exception {
+  void simple() throws Exception {
     check();
   }
 
   @Test
-  public void testCodec() throws Exception {
+  void codec() throws Exception {
     check("--codec", "snappy");
   }
 
   @Test
-  public void testMissingCountParameter() throws Exception {
+  void missingCountParameter() throws Exception {
     checkMissingCount();
   }
 
   @Test
-  public void testStdOut() throws Exception {
+  void stdOut() throws Exception {
     TestUtil.resetRandomSeed();
     run(Arrays.asList("-", "--count", COUNT, "--schema-file", SCHEMA_FILE.toString(), "--seed", Long.toString(SEED)));
 
@@ -137,7 +138,7 @@ public class TestCreateRandomFileTool {
   }
 
   @Test
-  public void testDefaultCodec() throws Exception {
+  void defaultCodec() throws Exception {
     // The default codec for random is deflate
     run(Collections.emptyList());
     assertTrue(err.toString().contains("Compression codec (default: deflate)"));

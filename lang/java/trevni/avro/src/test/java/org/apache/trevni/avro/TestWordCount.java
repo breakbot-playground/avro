@@ -38,9 +38,11 @@ import org.apache.avro.mapred.AvroReducer;
 import org.apache.avro.mapred.AvroCollector;
 
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaParser;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestWordCount {
 
@@ -65,7 +67,7 @@ public class TestWordCount {
   }
 
   @Test
-  public void runTestsInOrder() throws Exception {
+  void runTestsInOrder() throws Exception {
     testOutputFormat();
     testInputFormat();
   }
@@ -115,7 +117,7 @@ public class TestWordCount {
 
     WordCountUtil wordCountUtil = new WordCountUtil("trevniMapredTest");
 
-    Schema subSchema = new Schema.Parser().parse("{\"type\":\"record\"," + "\"name\":\"PairValue\"," + "\"fields\": [ "
+    Schema subSchema = new SchemaParser().parse("{\"type\":\"record\"," + "\"name\":\"PairValue\"," + "\"fields\": [ "
         + "{\"name\":\"value\", \"type\":\"long\"}" + "]}");
     AvroJob.setInputSchema(job, subSchema);
     AvroJob.setMapperClass(job, Counter.class);

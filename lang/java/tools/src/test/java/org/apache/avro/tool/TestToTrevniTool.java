@@ -17,6 +17,8 @@
  */
 package org.apache.avro.tool;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
@@ -24,12 +26,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaParser;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.util.RandomData;
 import org.apache.trevni.avro.AvroColumnReader;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class TestToTrevniTool {
   private static final long SEED = System.currentTimeMillis();
@@ -48,8 +50,8 @@ public class TestToTrevniTool {
   }
 
   @Test
-  public void test() throws Exception {
-    Schema schema = new Schema.Parser().parse(SCHEMA_FILE);
+  void test() throws Exception {
+    Schema schema = new SchemaParser().parse(SCHEMA_FILE);
 
     DataFileWriter<Object> writer = new DataFileWriter<>(new GenericDatumWriter<>());
     writer.create(schema, Util.createFromFS(AVRO_FILE.toString()));

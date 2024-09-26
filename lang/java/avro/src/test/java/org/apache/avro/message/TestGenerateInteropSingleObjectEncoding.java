@@ -20,11 +20,11 @@
 package org.apache.avro.message;
 
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaParser;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecordBuilder;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -45,16 +45,16 @@ public class TestGenerateInteropSingleObjectEncoding {
   private static Schema SCHEMA;
   private static GenericRecordBuilder BUILDER;
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() throws IOException {
     try (FileInputStream fileInputStream = new FileInputStream(SCHEMA_FILE)) {
-      SCHEMA = new Schema.Parser().parse(fileInputStream);
+      SCHEMA = new SchemaParser().parse(fileInputStream);
       BUILDER = new GenericRecordBuilder(SCHEMA);
     }
   }
 
   @Test
-  public void generateData() throws IOException {
+  void generateData() throws IOException {
     MessageEncoder<GenericData.Record> encoder = new BinaryMessageEncoder<>(GenericData.get(), SCHEMA);
     BUILDER.set("id", 42L).set("name", "Bill").set("tags", Arrays.asList("dog_lover", "cat_hater")).build();
     ByteBuffer buffer = encoder.encode(

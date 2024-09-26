@@ -25,9 +25,11 @@ import org.apache.trevni.ValueType;
 import org.apache.trevni.ColumnMetaData;
 import org.apache.trevni.ColumnFileMetaData;
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaParser;
 import org.apache.avro.util.RandomData;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestShredder {
   private static final long SEED = System.currentTimeMillis();
@@ -36,7 +38,7 @@ public class TestShredder {
   private static final File FILE = new File("target", "test.trv");
 
   @Test
-  public void testPrimitives() throws Exception {
+  void primitives() throws Exception {
     check(Schema.create(Schema.Type.NULL), new ColumnMetaData("null", ValueType.NULL));
     check(Schema.create(Schema.Type.BOOLEAN), new ColumnMetaData("boolean", ValueType.BOOLEAN));
 
@@ -59,131 +61,130 @@ public class TestShredder {
   private static final String SIMPLE_RECORD = "{\"type\":\"record\",\"name\":\"R\",\"fields\":[" + SIMPLE_FIELDS + "]}";
 
   @Test
-  public void testSimpleRecord() throws Exception {
-    check(new Schema.Parser().parse(SIMPLE_RECORD), new ColumnMetaData("x", ValueType.INT),
+  void simpleRecord() throws Exception {
+    check(new SchemaParser().parse(SIMPLE_RECORD), new ColumnMetaData("x", ValueType.INT),
         new ColumnMetaData("y", ValueType.STRING));
   }
 
   @Test
-  public void testDefaultValue() throws Exception {
+  void defaultValue() throws Exception {
     String s = "{\"type\":\"record\",\"name\":\"R\",\"fields\":[" + SIMPLE_FIELDS + ","
         + "{\"name\":\"z\",\"type\":\"int\"," + "\"default\":1,\"" + RandomData.USE_DEFAULT + "\":true}" + "]}";
-    checkWrite(new Schema.Parser().parse(SIMPLE_RECORD));
-    checkRead(new Schema.Parser().parse(s));
+    checkWrite(new SchemaParser().parse(SIMPLE_RECORD));
+    checkRead(new SchemaParser().parse(s));
   }
 
   @Test
-  public void testNestedRecord() throws Exception {
+  void nestedRecord() throws Exception {
     String s = "{\"type\":\"record\",\"name\":\"S\",\"fields\":[" + "{\"name\":\"x\",\"type\":\"int\"},"
         + "{\"name\":\"R\",\"type\":" + SIMPLE_RECORD + "}," + "{\"name\":\"y\",\"type\":\"string\"}" + "]}";
-    check(new Schema.Parser().parse(s), new ColumnMetaData("x", ValueType.INT),
-        new ColumnMetaData("R#x", ValueType.INT), new ColumnMetaData("R#y", ValueType.STRING),
-        new ColumnMetaData("y", ValueType.STRING));
+    check(new SchemaParser().parse(s), new ColumnMetaData("x", ValueType.INT), new ColumnMetaData("R#x", ValueType.INT),
+        new ColumnMetaData("R#y", ValueType.STRING), new ColumnMetaData("y", ValueType.STRING));
   }
 
   @Test
-  public void testNamedRecord() throws Exception {
+  void namedRecord() throws Exception {
     String s = "{\"type\":\"record\",\"name\":\"S\",\"fields\":[" + "{\"name\":\"R1\",\"type\":" + SIMPLE_RECORD + "},"
         + "{\"name\":\"R2\",\"type\":\"R\"}" + "]}";
-    check(new Schema.Parser().parse(s), new ColumnMetaData("R1#x", ValueType.INT),
+    check(new SchemaParser().parse(s), new ColumnMetaData("R1#x", ValueType.INT),
         new ColumnMetaData("R1#y", ValueType.STRING), new ColumnMetaData("R2#x", ValueType.INT),
         new ColumnMetaData("R2#y", ValueType.STRING));
   }
 
   @Test
-  public void testSimpleArray() throws Exception {
+  void simpleArray() throws Exception {
     String s = "{\"type\":\"array\",\"items\":\"long\"}";
-    check(new Schema.Parser().parse(s), new ColumnMetaData("[]", ValueType.LONG).isArray(true));
+    check(new SchemaParser().parse(s), new ColumnMetaData("[]", ValueType.LONG).isArray(true));
   }
 
   private static final String RECORD_ARRAY = "{\"type\":\"array\",\"items\":" + SIMPLE_RECORD + "}";
 
   @Test
-  public void testArray() throws Exception {
+  void array() throws Exception {
     ColumnMetaData p = new ColumnMetaData("[]", ValueType.NULL).isArray(true);
-    check(new Schema.Parser().parse(RECORD_ARRAY), p, new ColumnMetaData("[]#x", ValueType.INT).setParent(p),
+    check(new SchemaParser().parse(RECORD_ARRAY), p, new ColumnMetaData("[]#x", ValueType.INT).setParent(p),
         new ColumnMetaData("[]#y", ValueType.STRING).setParent(p));
   }
 
   @Test
-  public void testSimpleUnion() throws Exception {
+  void simpleUnion() throws Exception {
     String s = "[\"int\",\"string\"]";
-    check(new Schema.Parser().parse(s), new ColumnMetaData("int", ValueType.INT).isArray(true),
+    check(new SchemaParser().parse(s), new ColumnMetaData("int", ValueType.INT).isArray(true),
         new ColumnMetaData("string", ValueType.STRING).isArray(true));
   }
 
   @Test
-  public void testSimpleOptional() throws Exception {
+  void simpleOptional() throws Exception {
     String s = "[\"null\",\"string\"]";
-    check(new Schema.Parser().parse(s), new ColumnMetaData("string", ValueType.STRING).isArray(true));
+    check(new SchemaParser().parse(s), new ColumnMetaData("string", ValueType.STRING).isArray(true));
   }
 
   private static final String UNION = "[\"null\",\"int\"," + SIMPLE_RECORD + "]";
 
   @Test
-  public void testUnion() throws Exception {
+  void union() throws Exception {
     ColumnMetaData p = new ColumnMetaData("R", ValueType.NULL).isArray(true);
-    check(new Schema.Parser().parse(UNION), new ColumnMetaData("int", ValueType.INT).isArray(true), p,
+    check(new SchemaParser().parse(UNION), new ColumnMetaData("int", ValueType.INT).isArray(true), p,
         new ColumnMetaData("R#x", ValueType.INT).setParent(p),
         new ColumnMetaData("R#y", ValueType.STRING).setParent(p));
   }
 
   @Test
-  public void testNestedArray() throws Exception {
+  void nestedArray() throws Exception {
     String s = "{\"type\":\"record\",\"name\":\"S\",\"fields\":[" + "{\"name\":\"x\",\"type\":\"int\"},"
         + "{\"name\":\"A\",\"type\":" + RECORD_ARRAY + "}," + "{\"name\":\"y\",\"type\":\"string\"}" + "]}";
     ColumnMetaData p = new ColumnMetaData("A[]", ValueType.NULL).isArray(true);
-    check(new Schema.Parser().parse(s), new ColumnMetaData("x", ValueType.INT), p,
+    check(new SchemaParser().parse(s), new ColumnMetaData("x", ValueType.INT), p,
         new ColumnMetaData("A[]#x", ValueType.INT).setParent(p),
         new ColumnMetaData("A[]#y", ValueType.STRING).setParent(p), new ColumnMetaData("y", ValueType.STRING));
   }
 
   @Test
-  public void testNestedUnion() throws Exception {
+  void nestedUnion() throws Exception {
     String s = "{\"type\":\"record\",\"name\":\"S\",\"fields\":[" + "{\"name\":\"x\",\"type\":\"int\"},"
         + "{\"name\":\"u\",\"type\":" + UNION + "}," + "{\"name\":\"y\",\"type\":\"string\"}" + "]}";
     ColumnMetaData p = new ColumnMetaData("u/R", ValueType.NULL).isArray(true);
-    check(new Schema.Parser().parse(s), new ColumnMetaData("x", ValueType.INT),
+    check(new SchemaParser().parse(s), new ColumnMetaData("x", ValueType.INT),
         new ColumnMetaData("u/int", ValueType.INT).isArray(true), p,
         new ColumnMetaData("u/R#x", ValueType.INT).setParent(p),
         new ColumnMetaData("u/R#y", ValueType.STRING).setParent(p), new ColumnMetaData("y", ValueType.STRING));
   }
 
   @Test
-  public void testUnionInArray() throws Exception {
+  void unionInArray() throws Exception {
     String s = "{\"type\":\"record\",\"name\":\"S\",\"fields\":["
         + "{\"name\":\"a\",\"type\":{\"type\":\"array\",\"items\":" + UNION + "}}" + "]}";
     ColumnMetaData p = new ColumnMetaData("a[]", ValueType.NULL).isArray(true);
     ColumnMetaData r = new ColumnMetaData("a[]/R", ValueType.NULL).setParent(p).isArray(true);
-    check(new Schema.Parser().parse(s), p, new ColumnMetaData("a[]/int", ValueType.INT).setParent(p).isArray(true), r,
+    check(new SchemaParser().parse(s), p, new ColumnMetaData("a[]/int", ValueType.INT).setParent(p).isArray(true), r,
         new ColumnMetaData("a[]/R#x", ValueType.INT).setParent(r),
         new ColumnMetaData("a[]/R#y", ValueType.STRING).setParent(r));
   }
 
   @Test
-  public void testArrayInUnion() throws Exception {
+  void arrayInUnion() throws Exception {
     String s = "{\"type\":\"record\",\"name\":\"S\",\"fields\":[" + "{\"name\":\"a\",\"type\":[\"int\"," + RECORD_ARRAY
         + "]}]}";
     ColumnMetaData q = new ColumnMetaData("a/array", ValueType.NULL).isArray(true);
     ColumnMetaData r = new ColumnMetaData("a/array[]", ValueType.NULL).setParent(q).isArray(true);
-    check(new Schema.Parser().parse(s), new ColumnMetaData("a/int", ValueType.INT).isArray(true), q, r,
+    check(new SchemaParser().parse(s), new ColumnMetaData("a/int", ValueType.INT).isArray(true), q, r,
         new ColumnMetaData("a/array[]#x", ValueType.INT).setParent(r),
         new ColumnMetaData("a/array[]#y", ValueType.STRING).setParent(r));
   }
 
   @Test
-  public void testSimpleMap() throws Exception {
+  void simpleMap() throws Exception {
     String s = "{\"type\":\"map\",\"values\":\"long\"}";
     ColumnMetaData p = new ColumnMetaData(">", ValueType.NULL).isArray(true);
-    check(new Schema.Parser().parse(s), p, new ColumnMetaData(">key", ValueType.STRING).setParent(p),
+    check(new SchemaParser().parse(s), p, new ColumnMetaData(">key", ValueType.STRING).setParent(p),
         new ColumnMetaData(">value", ValueType.LONG).setParent(p));
   }
 
   @Test
-  public void testMap() throws Exception {
+  void map() throws Exception {
     String s = "{\"type\":\"map\",\"values\":" + SIMPLE_RECORD + "}";
     ColumnMetaData p = new ColumnMetaData(">", ValueType.NULL).isArray(true);
-    check(new Schema.Parser().parse(s), p, new ColumnMetaData(">key", ValueType.STRING).setParent(p),
+    check(new SchemaParser().parse(s), p, new ColumnMetaData(">key", ValueType.STRING).setParent(p),
         new ColumnMetaData(">value#x", ValueType.INT).setParent(p),
         new ColumnMetaData(">value#y", ValueType.STRING).setParent(p));
   }

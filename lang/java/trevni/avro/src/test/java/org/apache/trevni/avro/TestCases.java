@@ -17,23 +17,25 @@
  */
 package org.apache.trevni.avro;
 
-import java.io.File;
 import java.io.EOFException;
-import java.io.InputStream;
+import java.io.File;
 import java.io.FileInputStream;
-import java.util.List;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.trevni.ColumnFileMetaData;
 
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaParser;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.io.DatumReader;
-import org.apache.avro.generic.GenericDatumReader;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestCases {
 
@@ -41,14 +43,14 @@ public class TestCases {
   private static final File FILE = new File("target", "case.trv");
 
   @Test
-  public void testCases() throws Exception {
+  void cases() throws Exception {
     for (File f : DIR.listFiles())
       if (f.isDirectory() && !f.getName().startsWith("."))
         runCase(f);
   }
 
   private void runCase(File dir) throws Exception {
-    Schema schema = new Schema.Parser().parse(new File(dir, "input.avsc"));
+    Schema schema = new SchemaParser().parse(new File(dir, "input.avsc"));
     List<Object> data = fromJson(schema, new File(dir, "input.json"));
 
     // write full data
@@ -63,7 +65,7 @@ public class TestCases {
     // test that sub-schemas read correctly
     for (File f : dir.listFiles())
       if (f.isDirectory() && !f.getName().startsWith(".")) {
-        Schema s = new Schema.Parser().parse(new File(f, "sub.avsc"));
+        Schema s = new SchemaParser().parse(new File(f, "sub.avsc"));
         checkRead(s, fromJson(s, new File(f, "sub.json")));
       }
   }

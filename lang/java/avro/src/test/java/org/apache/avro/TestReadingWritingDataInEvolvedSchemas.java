@@ -17,9 +17,6 @@
  */
 package org.apache.avro;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.EnumSymbol;
 import org.apache.avro.generic.GenericData.Record;
@@ -45,6 +43,9 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 public class TestReadingWritingDataInEvolvedSchemas {
@@ -89,13 +90,18 @@ public class TestReadingWritingDataInEvolvedSchemas {
       .fields() //
       .name(FIELD_A).type().unionOf().stringType().and().bytesType().endUnion().noDefault() //
       .endRecord();
+
+  private static final Schema ENUM_AB = SchemaBuilder.enumeration("Enum1").symbols("A", "B");
+
   private static final Schema ENUM_AB_RECORD = SchemaBuilder.record(RECORD_A) //
       .fields() //
-      .name(FIELD_A).type().enumeration("Enum1").symbols("A", "B").noDefault() //
+      .name(FIELD_A).type(ENUM_AB).noDefault() //
       .endRecord();
+
+  private static final Schema ENUM_ABC = SchemaBuilder.enumeration("Enum1").symbols("A", "B", "C");
   private static final Schema ENUM_ABC_RECORD = SchemaBuilder.record(RECORD_A) //
       .fields() //
-      .name(FIELD_A).type().enumeration("Enum1").symbols("A", "B", "C").noDefault() //
+      .name(FIELD_A).type(ENUM_ABC).noDefault() //
       .endRecord();
   private static final Schema UNION_INT_RECORD = SchemaBuilder.record(RECORD_A) //
       .fields() //
@@ -310,7 +316,7 @@ public class TestReadingWritingDataInEvolvedSchemas {
   @Test
   public void enumRecordCanBeReadWithExtendedEnumSchema() throws Exception {
     Schema writer = ENUM_AB_RECORD;
-    Record record = defaultRecordWithSchema(writer, FIELD_A, new EnumSymbol(writer, "A"));
+    Record record = defaultRecordWithSchema(writer, FIELD_A, new EnumSymbol(ENUM_AB, "A"));
     byte[] encoded = encodeGenericBlob(record);
     Record decoded = decodeGenericBlob(ENUM_ABC_RECORD, writer, encoded);
     assertEquals("A", decoded.get(FIELD_A).toString());
@@ -319,7 +325,7 @@ public class TestReadingWritingDataInEvolvedSchemas {
   @Test
   public void enumRecordWithExtendedSchemaCanBeReadWithOriginalEnumSchemaIfOnlyOldValues() throws Exception {
     Schema writer = ENUM_ABC_RECORD;
-    Record record = defaultRecordWithSchema(writer, FIELD_A, new EnumSymbol(writer, "A"));
+    Record record = defaultRecordWithSchema(writer, FIELD_A, new EnumSymbol(ENUM_ABC, "A"));
     byte[] encoded = encodeGenericBlob(record);
     Record decoded = decodeGenericBlob(ENUM_AB_RECORD, writer, encoded);
     assertEquals("A", decoded.get(FIELD_A).toString());
@@ -330,7 +336,7 @@ public class TestReadingWritingDataInEvolvedSchemas {
     expectedException.expect(AvroTypeException.class);
     expectedException.expectMessage("No match for C");
     Schema writer = ENUM_ABC_RECORD;
-    Record record = defaultRecordWithSchema(writer, FIELD_A, new EnumSymbol(writer, "C"));
+    Record record = defaultRecordWithSchema(writer, FIELD_A, new EnumSymbol(ENUM_ABC, "C"));
     byte[] encoded = encodeGenericBlob(record);
     decodeGenericBlob(ENUM_AB_RECORD, writer, encoded);
   }
@@ -385,10 +391,10 @@ public class TestReadingWritingDataInEvolvedSchemas {
 
   @Test
   public void aliasesInSchema() throws Exception {
-    Schema writer = new Schema.Parser()
+    Schema writer = new SchemaParser()
         .parse("{\"namespace\": \"example.avro\", \"type\": \"record\", \"name\": \"User\", \"fields\": ["
             + "{\"name\": \"name\", \"type\": \"int\"}\n" + "]}\n");
-    Schema reader = new Schema.Parser()
+    Schema reader = new SchemaParser()
         .parse("{\"namespace\": \"example.avro\", \"type\": \"record\", \"name\": \"User\", \"fields\": ["
             + "{\"name\": \"fname\", \"type\": \"int\", \"aliases\" : [ \"name\" ]}\n" + "]}\n");
 

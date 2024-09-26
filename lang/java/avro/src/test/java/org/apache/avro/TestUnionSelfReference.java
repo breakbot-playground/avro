@@ -19,11 +19,11 @@ package org.apache.avro;
 
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 import org.apache.avro.Schema.Field;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.apache.avro.Schema.Type;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 public class TestUnionSelfReference {
@@ -47,8 +47,8 @@ public class TestUnionSelfReference {
       + "        \"default\": null" + "      }" + "    ]" + "  }";
 
   @Test
-  public void testSelfReferenceInUnion() {
-    Schema schema = new Schema.Parser().parse(SIMPLE_BINARY_TREE);
+  void selfReferenceInUnion() {
+    Schema schema = new SchemaParser().parse(SIMPLE_BINARY_TREE);
     Field leftField = schema.getField("left");
     assertEquals(JsonProperties.NULL_VALUE, leftField.defaultVal());
     final Schema leftFieldSchema = leftField.schema();
@@ -65,8 +65,8 @@ public class TestUnionSelfReference {
   }
 
   @Test
-  public void testSelfReferenceInThreeUnion() {
-    Schema schema = new Schema.Parser().parse(THREE_TYPE_UNION);
+  void selfReferenceInThreeUnion() {
+    Schema schema = new SchemaParser().parse(THREE_TYPE_UNION);
     Field leftField = schema.getField("left");
     assertEquals(JsonProperties.NULL_VALUE, leftField.defaultVal());
     final Schema leftFieldSchema = leftField.schema();
